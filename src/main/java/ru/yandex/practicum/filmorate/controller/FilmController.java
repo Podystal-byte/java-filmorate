@@ -33,7 +33,7 @@ public class FilmController {
             throw new ValidationException("Имя фильма должно быть заполнено");
         }
         if (film.getDescription().length() > 201) {
-            log.error("Описание больше 200 символов" );
+            log.error("Описание больше 200 символов");
             throw new ValidationException("Максимальная длина описания — 200 символов");
         }
         if (film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
@@ -68,7 +68,7 @@ public class FilmController {
                 throw new ValidationException("Имя фильма должно быть заполнено");
             }
             if (updateFilm.getDescription().length() > 201) {
-                log.error("Описание больше 200 символов" );
+                log.error("Описание больше 200 символов");
                 throw new ValidationException("Максимальная длина описания — 200 символов");
             }
             if (updateFilm.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
