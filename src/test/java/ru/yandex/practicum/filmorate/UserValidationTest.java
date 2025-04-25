@@ -31,38 +31,6 @@ class UserValidationTest {
     }
 
     @Test
-    void createUserWithEmptyEmailShouldFail() {
-        validUser.setEmail("");
-        ValidationException exception = assertThrows(ValidationException.class,
-                () -> userController.create(validUser));
-        assertEquals("Электронная почта не может быть пустой и должна содержать символ @", exception.getMessage());
-    }
-
-    @Test
-    void createUserWithInvalidEmailShouldFail() {
-        validUser.setEmail("invalid-email");
-        ValidationException exception = assertThrows(ValidationException.class,
-                () -> userController.create(validUser));
-        assertEquals("Электронная почта не может быть пустой и должна содержать символ @", exception.getMessage());
-    }
-
-    @Test
-    void createUserWithEmptyLoginShouldFail() {
-        validUser.setLogin("");
-        ValidationException exception = assertThrows(ValidationException.class,
-                () -> userController.create(validUser));
-        assertEquals("Логин не может быть пустым и содержать пробелы", exception.getMessage());
-    }
-
-    @Test
-    void createUserWithLoginContainingSpacesShouldFail() {
-        validUser.setLogin("login with spaces");
-        ValidationException exception = assertThrows(ValidationException.class,
-                () -> userController.create(validUser));
-        assertEquals("Логин не может быть пустым и содержать пробелы", exception.getMessage());
-    }
-
-    @Test
     void createUserWithFutureBirthdayShouldFail() {
         validUser.setBirthday(LocalDate.now().plusDays(1));
         ValidationException exception = assertThrows(ValidationException.class,

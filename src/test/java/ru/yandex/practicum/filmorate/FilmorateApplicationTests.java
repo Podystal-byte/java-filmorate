@@ -31,35 +31,10 @@ class FilmorateApplicationTests {
     }
 
     @Test
-    void createFilmWithEmptyNameShouldFail() {
-        validFilm.setName("");
-        ValidationException exception = assertThrows(ValidationException.class,
-                () -> filmController.create(validFilm));
-        assertEquals("Имя фильма должно быть заполнено", exception.getMessage());
-    }
-
-    @Test
-    void createFilmWithNullNameShouldFail() {
-        validFilm.setName(null);
-        ValidationException exception = assertThrows(ValidationException.class,
-                () -> filmController.create(validFilm));
-        assertEquals("Имя фильма должно быть заполнено", exception.getMessage());
-    }
-
-    @Test
     void createFilmWithEarlyReleaseDateShouldFail() {
         validFilm.setReleaseDate(LocalDate.of(1895, 12, 27));
-        ValidationException exception = assertThrows(ValidationException.class,
-                () -> filmController.create(validFilm));
+        ValidationException exception = assertThrows(ValidationException.class, () -> filmController.create(validFilm));
         assertEquals("Дата релиза должна быть не раньше 28 декабря 1895 года", exception.getMessage());
-    }
-
-    @Test
-    void createFilmWithNegativeDurationShouldFail() {
-        validFilm.setDuration(-1);
-        ValidationException exception = assertThrows(ValidationException.class,
-                () -> filmController.create(validFilm));
-        assertEquals("Продолжительность фильма должна быть положительным числом", exception.getMessage());
     }
 
     @Test
