@@ -4,79 +4,73 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
 
-import java.time.LocalDate;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/users")
 @Slf4j
 public class UserController {
-    private final Map<Integer, User> users = new HashMap<>();
+    private final UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @GetMapping
     public Collection<User> findAll() {
-        log.info("Получен запрос на получение списка всех пользователей");
-        return users.values();
+        log.info("Получен запрос на список всех пользователей");
+        return userService.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public User findById(@PathVariable int id) throws NotFoundException {
+        log.info("Получен запрос на пользователя с ID " + id);
+        return userService.getUserOrThrow(id);
     }
 
     @PostMapping
-    public User create(@Valid @RequestBody User user) throws ValidationException {
+    public User create(@Valid @RequestBody User user) {
         log.info("Получен запрос на создание пользователя");
-
-        validateUserFields(user);
-
-        user.setId(getNextId());
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-            log.debug("Имя пользователя пустое, установлен логин по умолчанию");
-        }
-
-        users.put(user.getId(), user);
-        log.info("Пользователь успешно создан");
-        return user;
+        return userService.add(user);
     }
 
     @PutMapping
-    public User update(@Valid @RequestBody User updatedUser) throws NotFoundException, ValidationException {
-        log.info("Получен запрос на обновление пользователя");
-        User existingUser = users.get(updatedUser.getId());
-
-        if (updatedUser.getId() == null) {
-            throw new IllegalArgumentException("ID пользователя должен быть указан");
-        }
-
-        if (existingUser == null) {
-            throw new NotFoundException("Пользователь с ID " + updatedUser.getId() + " не найден");
-        }
-
-        validateUserFields(updatedUser);
-
-        existingUser.setEmail(updatedUser.getEmail());
-        existingUser.setLogin(updatedUser.getLogin());
-        existingUser.setName(updatedUser.getName());
-        existingUser.setBirthday(updatedUser.getBirthday());
-
-        log.info("Пользователь успешно обновлен");
-        return existingUser;
+    public User update(@Valid @RequestBody User user) throws NotFoundException {
+        log.info("Получен запрос на обновление пользователя с ID " + user.getId());
+        return userService.update(user);
     }
 
-    private void validateUserFields(User user) throws ValidationException {
-        if (user.getBirthday() != null && user.getBirthday().isAfter(LocalDate.now())) {
-            throw new ValidationException("Дата рождения не может быть в будущем");
-        }
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable int id) {
+        log.info("Получен запрос на удаление пользователя с ID " + id);
+        userService.delete(id);
     }
 
-    private int getNextId() {
-        int currentMaxId = users.keySet()
-                .stream()
-                .mapToInt(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+    @PutMapping("/{id}/friends/{friendId}")
+    public void addFriend(@PathVariable int id, @PathVariable int friendId) throws NotFoundException {
+        log.info("Пользователь " + id + " добавляет в друзья пользователя " + friendId);
+        userService.addFriend(id, friendId);
+    }
+
+    @DeleteMapping("/{id}/friends/{friendId}")
+    public void removeFriend(@PathVariable int id, @PathVariable int friendId) throws NotFoundException {
+        log.info("Пользователь " + id + " удаляет из друзей пользователя " + friendId);
+        userService.removeFriend(id, friendId);
+    }
+
+    @GetMapping("/{id}/friends")
+    public List<User> getFriends(@PathVariable int id) throws NotFoundException {
+        log.info("Получен запрос на список друзей пользователя с ID " + id);
+        return userService.getFriends(id);
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public List<User> getCommonFriends(@PathVariable int id, @PathVariable int otherId) throws NotFoundException {
+        log.info("Получен запрос на список общих друзей пользователей " + id + " и " + otherId);
+        return userService.getCommonFriends(id, otherId);
     }
 }
