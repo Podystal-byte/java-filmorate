@@ -25,4 +25,6 @@ public class User {
     private LocalDate birthday;
 
     private Set<Integer> friends = new HashSet<>();
+    private Set<Integer> outgoingFriendRequests = new HashSet<>();
+    private Set<Integer> incomingFriendRequests = new HashSet<>();
 }

@@ -50,10 +50,14 @@ public class UserController {
         userService.delete(id);
     }
 
-    @PutMapping("/{id}/friends/{friendId}")
-    public void addFriend(@PathVariable int id, @PathVariable int friendId) throws NotFoundException {
-        log.info("Пользователь " + id + " добавляет в друзья пользователя " + friendId);
-        userService.addFriend(id, friendId);
+    @PutMapping("/{userId}/friends/request/{friendId}")
+    public void sendFriendRequest(@PathVariable int userId, @PathVariable int friendId) throws NotFoundException {
+        userService.friendShipOffer(userId, friendId);
+    }
+
+    @PutMapping("/{userId}/friends/accept/{friendId}")
+    public void acceptFriendRequest(@PathVariable int userId, @PathVariable int friendId) throws NotFoundException {
+        userService.addFriend(userId, friendId);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")

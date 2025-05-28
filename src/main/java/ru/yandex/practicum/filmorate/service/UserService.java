@@ -22,12 +22,32 @@ public class UserService {
         User user = getUserOrThrow(userId);
         User friend = getUserOrThrow(friendId);
 
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
+        if (user.getIncomingFriendRequests().contains(friendId)) {
+            user.getFriends().add(friendId);
+            friend.getFriends().add(userId);
+
+            user.getIncomingFriendRequests().remove(friendId);
+            friend.getOutgoingFriendRequests().remove(userId);
+
+            userStorage.update(user);
+            userStorage.update(friend);
+        } else {
+            throw new NotFoundException("Запрос на дружбу не найден");
+        }
+    }
+
+
+    public void friendShipOffer(int userId, int friendId) throws NotFoundException {
+        User user = getUserOrThrow(userId);
+        User friend = getUserOrThrow(friendId);
+
+        user.getOutgoingFriendRequests().add(friendId);
+        friend.getIncomingFriendRequests().add(userId);
 
         userStorage.update(user);
         userStorage.update(friend);
     }
+
 
     public void removeFriend(int userId, int friendId) throws NotFoundException {
         User user = getUserOrThrow(userId);
