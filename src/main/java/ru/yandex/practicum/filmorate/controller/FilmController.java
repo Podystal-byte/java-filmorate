@@ -6,74 +6,66 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
 
-import java.time.LocalDate;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/films")
 @Slf4j
 public class FilmController {
-    private final Map<Integer, Film> films = new HashMap<>();
-    private static final LocalDate MIN_RELEASE_DATE = LocalDate.of(1895, 12, 28);
+    private final FilmService filmService;
+
+    public FilmController(FilmService filmService) {
+        this.filmService = filmService;
+    }
 
     @GetMapping
     public Collection<Film> findAll() {
-        log.info("Запрос на получение списка всех фильмов");
-        return films.values();
+        log.info("Получен запрос на список всех фильмов");
+        return filmService.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public Film findById(@PathVariable int id) throws NotFoundException {
+        log.info("Получен запрос на фильм с ID " + id);
+        return filmService.getFilmOrThrow(id);
     }
 
     @PostMapping
     public Film create(@Valid @RequestBody Film film) throws ValidationException {
         log.info("Получен запрос на создание фильма");
-        validateReleaseDate(film.getReleaseDate());
-
-        film.setId(getNextId());
-        films.put(film.getId(), film);
-        log.info("Фильм успешно создан");
-        return film;
+        return filmService.addFilm(film);
     }
 
     @PutMapping
-    public Film update(@Valid @RequestBody Film updatedFilm) throws NotFoundException, ValidationException {
-        log.info("Получен запрос на обновление фильма");
-
-        if (updatedFilm.getId() == null) {
-            throw new IllegalArgumentException("ID фильма должен быть указан");
-        }
-
-        Film oldFilm = films.get(updatedFilm.getId());
-        if (oldFilm == null) {
-            throw new NotFoundException("Фильм с ID " + updatedFilm.getId() + " не найден");
-        }
-
-        validateReleaseDate(updatedFilm.getReleaseDate());
-
-        oldFilm.setName(updatedFilm.getName());
-        oldFilm.setDescription(updatedFilm.getDescription());
-        oldFilm.setReleaseDate(updatedFilm.getReleaseDate());
-        oldFilm.setDuration(updatedFilm.getDuration());
-
-        log.info("Фильм успешно обновлен");
-        return oldFilm;
+    public Film update(@Valid @RequestBody Film film) throws ValidationException, NotFoundException {
+        log.info("Получен запрос на обновление фильма с ID " + film.getId());
+        return filmService.updateFilm(film);
     }
 
-    private void validateReleaseDate(LocalDate releaseDate) throws ValidationException {
-        if (releaseDate.isBefore(MIN_RELEASE_DATE)) {
-            throw new ValidationException("Дата релиза должна быть не раньше 28 декабря 1895 года");
-        }
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable int id) {
+        log.info("Получен запрос на удаление фильма с ID " + id);
+        filmService.delete(id);
     }
 
-    private int getNextId() {
-        int currentMaxId = films.keySet()
-                .stream()
-                .mapToInt(id -> id)
-                .max()
-                .orElse(0);
-        int nextId = ++currentMaxId;
-        log.debug("Сгенерирован новый ID для фильма: {}", nextId);
-        return nextId;
+    @PutMapping("/{id}/like/{userId}")
+    public void addLike(@PathVariable int id, @PathVariable int userId) throws ValidationException, NotFoundException {
+        log.info("Пользователь " + userId + " ставит лайк фильму " + id);
+        filmService.addLike(id, userId);
+    }
+
+    @DeleteMapping("/{id}/like/{userId}")
+    public void removeLike(@PathVariable int id, @PathVariable int userId) throws ValidationException, NotFoundException {
+        log.info("Пользователь " + userId + " удаляет лайк с фильма " + id);
+        filmService.removeLike(id, userId);
+    }
+
+    @GetMapping("/popular")
+    public List<Film> getPopular(@RequestParam(defaultValue = "10") int count) {
+        log.info("Получен запрос на " + count + " популярных фильмов");
+        return filmService.getPopularFilms(count);
     }
 }
