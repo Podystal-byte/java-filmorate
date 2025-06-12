@@ -1,3 +1,4 @@
 # java-filmorate
+
 Template repository for Filmorate project.
-![img.png](img.png)
+![диаграмма](1.jpg)![1.jpg](../../../Downloads/1.jpg)
