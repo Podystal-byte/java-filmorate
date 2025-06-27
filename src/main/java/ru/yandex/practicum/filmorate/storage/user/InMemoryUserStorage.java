@@ -6,6 +6,7 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -42,6 +43,26 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public Collection<User> findAll() {
         return users.values();
+    }
+
+    @Override
+    public void sendFriendRequest(int senderId, int recipientId) {
+
+    }
+
+    @Override
+    public void acceptFriendRequest(int userId, int friendId) {
+
+    }
+
+    @Override
+    public void removeFriend(int userId, int friendId) {
+
+    }
+
+    @Override
+    public Optional<User> findUserById(int id) {
+        return Optional.empty();
     }
 
     private int getNextId() {

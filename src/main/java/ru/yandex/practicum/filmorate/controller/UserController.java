@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
@@ -51,12 +52,14 @@ public class UserController {
     }
 
     @PutMapping("/{userId}/friends/request/{friendId}")
-    public void sendFriendRequest(@PathVariable int userId, @PathVariable int friendId) throws NotFoundException {
+    public void sendFriendRequest(@PathVariable int userId, @PathVariable int friendId) throws NotFoundException, ValidationException {
+        log.info("Запрос на добавление в друзья от пользователя: " + friendId);
         userService.friendShipOffer(userId, friendId);
     }
 
     @PutMapping("/{userId}/friends/accept/{friendId}")
     public void acceptFriendRequest(@PathVariable int userId, @PathVariable int friendId) throws NotFoundException {
+        log.info("Запрос на добавление в друзья от пользователя: " + friendId);
         userService.addFriend(userId, friendId);
     }
 

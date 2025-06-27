@@ -2,10 +2,11 @@ package ru.yandex.practicum.filmorate.storage.film;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.model.film.Film;
+import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
@@ -37,9 +38,25 @@ public class InMemoryFilmStorage implements FilmStorage {
         return films.get(id);
     }
 
+
     @Override
     public Collection<Film> findAll() {
         return films.values();
+    }
+
+    @Override
+    public void addLike(int filmId, int userId) {
+
+    }
+
+    @Override
+    public void removeLike(int filmId, int userId) {
+
+    }
+
+    @Override
+    public Set<Integer> getLikes(int filmId) {
+        return Set.of();
     }
 
     private int getNextId() {
@@ -49,4 +66,3 @@ public class InMemoryFilmStorage implements FilmStorage {
         return nextId;
     }
 }
-

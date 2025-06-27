@@ -1,7 +1,9 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -10,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class UserService {
     private final UserStorage userStorage;
@@ -18,34 +21,48 @@ public class UserService {
         this.userStorage = userStorage;
     }
 
-    public void addFriend(int userId, int friendId) throws NotFoundException {
-        User user = getUserOrThrow(userId);
-        User friend = getUserOrThrow(friendId);
+    public void addFriend(int acceptorId, int requesterId) throws NotFoundException {
+        User acceptor = getUserOrThrow(acceptorId);
+        User requester = getUserOrThrow(requesterId);
 
-        if (user.getIncomingFriendRequests().contains(friendId)) {
-            user.getFriends().add(friendId);
-            friend.getFriends().add(userId);
-
-            user.getIncomingFriendRequests().remove(friendId);
-            friend.getOutgoingFriendRequests().remove(userId);
-
-            userStorage.update(user);
-            userStorage.update(friend);
-        } else {
+        if (!acceptor.getIncomingFriendRequests().contains(requesterId)) {
             throw new NotFoundException("Запрос на дружбу не найден");
         }
+
+        userStorage.acceptFriendRequest(acceptorId, requesterId);
+
+        User updatedAcceptor = userStorage.findById(acceptorId);
+        User updatedRequester = userStorage.findById(requesterId);
+
+        acceptor.setIncomingFriendRequests(updatedAcceptor.getIncomingFriendRequests());
+        acceptor.setFriends(updatedAcceptor.getFriends());
+        requester.setOutgoingFriendRequests(updatedRequester.getOutgoingFriendRequests());
+        requester.setFriends(updatedRequester.getFriends());
+
+        acceptor.getIncomingFriendRequests().remove(requesterId);
+        requester.getOutgoingFriendRequests().remove(acceptorId);
     }
 
 
-    public void friendShipOffer(int userId, int friendId) throws NotFoundException {
-        User user = getUserOrThrow(userId);
-        User friend = getUserOrThrow(friendId);
+    public void friendShipOffer(int senderId, int recipientId) throws ValidationException, NotFoundException {
+        User sender = getUserOrThrow(senderId);
+        User recipient = getUserOrThrow(recipientId);
 
-        user.getOutgoingFriendRequests().add(friendId);
-        friend.getIncomingFriendRequests().add(userId);
+        if (sender.getFriends().contains(recipientId)) {
+            throw new ValidationException("Пользователи уже друзья");
+        }
 
-        userStorage.update(user);
-        userStorage.update(friend);
+        if (sender.getOutgoingFriendRequests().contains(recipientId)) {
+            throw new ValidationException("Заявка уже отправлена");
+        }
+
+        userStorage.sendFriendRequest(senderId, recipientId);
+
+        User updatedSender = userStorage.findById(senderId);
+        User updatedRecipient = userStorage.findById(recipientId);
+
+        sender.setOutgoingFriendRequests(updatedSender.getOutgoingFriendRequests());
+        recipient.setIncomingFriendRequests(updatedRecipient.getIncomingFriendRequests());
     }
 
 
@@ -53,11 +70,13 @@ public class UserService {
         User user = getUserOrThrow(userId);
         User friend = getUserOrThrow(friendId);
 
+        if (!user.getFriends().contains(friendId)) {
+            throw new NotFoundException("Друг не найден");
+        }
+
+        userStorage.removeFriend(userId, friendId);
         user.getFriends().remove(friendId);
         friend.getFriends().remove(userId);
-
-        userStorage.update(user);
-        userStorage.update(friend);
     }
 
     public List<User> getFriends(int userId) throws NotFoundException {
@@ -69,7 +88,16 @@ public class UserService {
         User user = getUserOrThrow(userId);
         User otherUser = getUserOrThrow(otherUserId);
 
-        return user.getFriends().stream().filter(id -> otherUser.getFriends().contains(id)).map(userStorage::findById).collect(Collectors.toList());
+        return user.getFriends().stream()
+                .filter(id -> otherUser.getFriends().contains(id))
+                .map(id -> {
+                    try {
+                        return getUserOrThrow(id);
+                    } catch (NotFoundException e) {
+                        throw new RuntimeException("Общий друг с id=" + id + " не найден", e);
+                    }
+                })
+                .collect(Collectors.toList());
     }
 
     public User getUserOrThrow(int id) throws NotFoundException {

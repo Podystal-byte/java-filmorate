@@ -2,51 +2,48 @@ package ru.yandex.practicum.filmorate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.yandex.practicum.filmorate.controller.FilmController;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.film.Film;
-import ru.yandex.practicum.filmorate.service.FilmService;
-import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
-import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
+import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
 
-import java.time.LocalDate;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
-class FilmorateApplicationTests {
-    private FilmController filmController;
-    private Film validFilm;
+@JdbcTest
+@AutoConfigureTestDatabase
+@Import({UserDbStorage.class})
+class FilmoRateApplicationTests {
+    private final UserDbStorage userStorage;
+    private final JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    public FilmoRateApplicationTests(UserDbStorage userStorage, JdbcTemplate jdbcTemplate) {
+        this.userStorage = userStorage;
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     @BeforeEach
     void setUp() {
-        InMemoryFilmStorage filmStorage = new InMemoryFilmStorage();
-        InMemoryUserStorage userStorage = new InMemoryUserStorage();
-        FilmService filmService = new FilmService(filmStorage, userStorage);
-        filmController = new FilmController(filmService);
-
-        validFilm = new Film();
-        validFilm.setName("Валидный фильм");
-        validFilm.setDescription("Правильное описание");
-        validFilm.setReleaseDate(LocalDate.of(2000, 1, 1));
-        validFilm.setDuration(120);
+        jdbcTemplate.update("DELETE FROM users");
+        jdbcTemplate.update("INSERT INTO users (user_id, email, login, name, birthday) VALUES (?, ?, ?, ?, ?)",
+                1, "test@mail.ru", "testLogin", "Test User", java.sql.Date.valueOf("1990-01-01"));
     }
 
     @Test
-    void createValidFilmShouldSucceed() {
-        assertDoesNotThrow(() -> filmController.create(validFilm));
-    }
+    public void testFindUserById() {
+        Optional<User> userOptional = userStorage.findUserById(1);
 
-    @Test
-    void createFilmWithEarlyReleaseDateShouldFail() {
-        validFilm.setReleaseDate(LocalDate.of(1895, 12, 27));
-        ValidationException exception = assertThrows(ValidationException.class, () -> filmController.create(validFilm));
-        assertEquals("Дата релиза должна быть не раньше 28 декабря 1895 года", exception.getMessage());
-    }
-
-    @Test
-    void updateFilmWithInvalidIdShouldFail() {
-        validFilm.setId(999);
-        assertThrows(NotFoundException.class, () -> filmController.update(validFilm));
+        assertThat(userOptional)
+                .isPresent()
+                .hasValueSatisfying(user -> {
+                    assertThat(user.getId()).isEqualTo(1);
+                    assertThat(user.getEmail()).isEqualTo("test@mail.ru");
+                    assertThat(user.getLogin()).isEqualTo("testLogin");
+                });
     }
 }
