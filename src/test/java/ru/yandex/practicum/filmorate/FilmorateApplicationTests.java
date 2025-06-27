@@ -30,20 +30,17 @@ class FilmoRateApplicationTests {
     @BeforeEach
     void setUp() {
         jdbcTemplate.update("DELETE FROM users");
-        jdbcTemplate.update("INSERT INTO users (user_id, email, login, name, birthday) VALUES (?, ?, ?, ?, ?)",
-                1, "test@mail.ru", "testLogin", "Test User", java.sql.Date.valueOf("1990-01-01"));
+        jdbcTemplate.update("INSERT INTO users (user_id, email, login, name, birthday) VALUES (?, ?, ?, ?, ?)", 1, "test@mail.ru", "testLogin", "Test User", java.sql.Date.valueOf("1990-01-01"));
     }
 
     @Test
     public void testFindUserById() {
         Optional<User> userOptional = userStorage.findUserById(1);
 
-        assertThat(userOptional)
-                .isPresent()
-                .hasValueSatisfying(user -> {
-                    assertThat(user.getId()).isEqualTo(1);
-                    assertThat(user.getEmail()).isEqualTo("test@mail.ru");
-                    assertThat(user.getLogin()).isEqualTo("testLogin");
-                });
+        assertThat(userOptional).isPresent().hasValueSatisfying(user -> {
+            assertThat(user.getId()).isEqualTo(1);
+            assertThat(user.getEmail()).isEqualTo("test@mail.ru");
+            assertThat(user.getLogin()).isEqualTo("testLogin");
+        });
     }
 }
