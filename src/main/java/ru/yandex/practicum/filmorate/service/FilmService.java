@@ -5,6 +5,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.genre.GenreStorage;
@@ -34,8 +35,12 @@ public class FilmService {
 
     public Film addFilm(Film film) throws ValidationException, NotFoundException {
         validateReleaseDate(film.getReleaseDate());
-        if (film.getMpa() == null) {
-            throw new ValidationException("Не указан MPA рейтинг");
+
+        if (film.getMpa() != null && film.getMpa().getId() != 0) {
+            Optional<Mpa> mpaOptional = mpaStorage.getMpaById(film.getMpa().getId());
+            if (mpaOptional.isEmpty()) {
+                throw new NotFoundException("Рейтинг MPA с ID=" + film.getMpa().getId() + " не существует");
+            }
         }
 
         if (film.getGenres() != null) {
