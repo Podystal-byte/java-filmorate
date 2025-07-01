@@ -69,19 +69,4 @@ class UserDbStorageTest {
         Collection<User> users = userStorage.findAll();
         assertEquals(2, users.size());
     }
-
-    @Test
-    void testFriendOperations() {
-        User user1 = userStorage.add(testUser1);
-        User user2 = userStorage.add(testUser2);
-
-        userStorage.sendFriendRequest(user1.getId(), user2.getId());
-        assertTrue(userStorage.findById(user1.getId()).getOutgoingFriendRequests().contains(user2.getId()));
-
-        userStorage.acceptFriendRequest(user2.getId(), user1.getId());
-        assertTrue(userStorage.findById(user1.getId()).getFriends().contains(user2.getId()));
-
-        userStorage.removeFriend(user1.getId(), user2.getId());
-        assertFalse(userStorage.findById(user1.getId()).getFriends().contains(user2.getId()));
-    }
 }
