@@ -2,13 +2,17 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/users")
@@ -27,10 +31,16 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public User findById(@PathVariable int id) throws NotFoundException {
-        log.info("Получен запрос на пользователя с ID " + id);
-        return userService.getUserOrThrow(id);
+    public ResponseEntity<?> findById(@PathVariable int id) {
+        try {
+            User user = userService.getUserOrThrow(id);
+            return ResponseEntity.ok(user);
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", e.getMessage()));
+        }
     }
+
 
     @PostMapping
     public User create(@Valid @RequestBody User user) {
@@ -39,42 +49,82 @@ public class UserController {
     }
 
     @PutMapping
-    public User update(@Valid @RequestBody User user) throws NotFoundException {
-        log.info("Получен запрос на обновление пользователя с ID " + user.getId());
-        return userService.update(user);
+    public ResponseEntity<?> update(@Valid @RequestBody User user) {
+        try {
+            User updatedUser = userService.update(user);
+            return ResponseEntity.ok(updatedUser);
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", e.getMessage()));
+        }
     }
+
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable int id) {
-        log.info("Получен запрос на удаление пользователя с ID " + id);
-        userService.delete(id);
+    public ResponseEntity<?> delete(@PathVariable int id) {
+        try {
+            userService.delete(id);
+            return ResponseEntity.noContent().build();
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", e.getMessage()));
+        }
     }
 
-    @PutMapping("/{userId}/friends/request/{friendId}")
-    public void sendFriendRequest(@PathVariable int userId, @PathVariable int friendId) throws NotFoundException {
-        userService.friendShipOffer(userId, friendId);
+
+    @PutMapping("/{userId}/friends/{friendId}")
+    public ResponseEntity<?> addFriend(@PathVariable int userId,
+                                       @PathVariable int friendId) {
+        try {
+            userService.addFriend(userId, friendId);
+            return ResponseEntity.ok().build();
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", e.getMessage()));
+        } catch (ValidationException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Ошибка при добавлении в друзья", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Внутренняя ошибка сервера"));
+        }
     }
 
-    @PutMapping("/{userId}/friends/accept/{friendId}")
-    public void acceptFriendRequest(@PathVariable int userId, @PathVariable int friendId) throws NotFoundException {
-        userService.addFriend(userId, friendId);
+    @DeleteMapping("/{userId}/friends/{friendId}")
+    public ResponseEntity<?> removeFriend(@PathVariable int userId,
+                                          @PathVariable int friendId) {
+        try {
+            userService.removeFriend(userId, friendId);
+            return ResponseEntity.noContent().build();
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", e.getMessage()));
+        }
     }
 
-    @DeleteMapping("/{id}/friends/{friendId}")
-    public void removeFriend(@PathVariable int id, @PathVariable int friendId) throws NotFoundException {
-        log.info("Пользователь " + id + " удаляет из друзей пользователя " + friendId);
-        userService.removeFriend(id, friendId);
-    }
 
     @GetMapping("/{id}/friends")
-    public List<User> getFriends(@PathVariable int id) throws NotFoundException {
-        log.info("Получен запрос на список друзей пользователя с ID " + id);
-        return userService.getFriends(id);
+    public ResponseEntity<?> getFriends(@PathVariable int id) {
+        try {
+            List<User> friends = userService.getFriends(id);
+            return ResponseEntity.ok(friends != null ? friends : List.of());
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", e.getMessage()));
+        }
     }
 
+
     @GetMapping("/{id}/friends/common/{otherId}")
-    public List<User> getCommonFriends(@PathVariable int id, @PathVariable int otherId) throws NotFoundException {
-        log.info("Получен запрос на список общих друзей пользователей " + id + " и " + otherId);
-        return userService.getCommonFriends(id, otherId);
+    public ResponseEntity<?> getCommonFriends(@PathVariable int id,
+                                              @PathVariable int otherId) {
+        try {
+            List<User> commonFriends = userService.getCommonFriends(id, otherId);
+            return ResponseEntity.ok(commonFriends);
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", e.getMessage()));
+        }
     }
 }
